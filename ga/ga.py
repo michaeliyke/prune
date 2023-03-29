@@ -3,6 +3,8 @@ from typing import List
 from copy import deepcopy
 from itertools import pairwise
 
+from pruning.utils import create_err as err
+
 tool = 'ga'
 
 FLAGS = {
@@ -16,12 +18,12 @@ OPTIONS = {
 }
 
 def get_option(x: str):
-  if not x in OPTIONS: raise Exception(f'Option \'{x}\' is not recognized')
+  if not x in OPTIONS: return err(err_id=73, err_m=f'Option \'{x}\' is not recognized')
   if x.startswith('--'): return OPTIONS[x]
   if x.startswith('-'): return OPTIONS[OPTIONS[x]]
 
 def get_flag(x: str):
-  if not x in FLAGS: raise Exception(f'Flag \'{x}\' is not recognized')
+  if not x in FLAGS: return err(err_id=74, err_m=f'Flag \'{x}\' is not recognized')
   if x.startswith('--'): return FLAGS[x]
   if x.startswith('-'): return FLAGS[FLAGS[x]]
 
@@ -39,7 +41,7 @@ def get_args_of(*, option: str, multiple: bool, args: List):
   pass
 
 
-def parse():
+def parse() -> dict:
   sys.argv.pop(0)
   sys.argv.insert(0, tool)
   args = deepcopy(sys.argv[1:])
@@ -55,22 +57,26 @@ def parse():
         # expand shortened options and proceed
         option = get_option(element)
         args.pop(i)
-        args.insert(i, f'--{option}')
+        args.insert(i, f'--{option["name"]}')
         options.append(option)
         continue
 
-      # The case of fals are two - a full flag and short flags assumed combined
+      # The cases of a flas are two:
+      # (a): full flags 
+      # (b) short flags that are assumed to be combined
+      
       # Tackle full flag
       if element in FLAGS:
         # expand shortened options and proceed
         flag = get_flag(element)
         args.pop(i)
-        args.insert(i, f'--{flag}')
+        args.insert(i, f'--{flag["name"]}')
         flags.append(flag)
         continue
 
       # Tackle short flags, assumed combined
       # But first ensure that element is an actual set of recognized flags
+      # Otherwise, unrecognized set flags pass for an argument so skip them
       cpy = [x for x in element[1:] if f'-{x}' in FLAGS]
       if len(cpy) != len(element[1:]): continue
       
@@ -79,17 +85,19 @@ def parse():
       args.pop(i)
       for ii, token in enumerate(element[1:]):
         flag = get_flag(f'-{token}')
-        args.insert(i+ii, f'--{flag}')
+        args.insert(i+ii, f'--{flag["name"]}')
         flags.append(flag)
   
   # Check flag repeats
   for flag in flags:
-    if flag['name'] in flag_names: raise Exception(f'Flag \'--{flag}\' duplicated')
+    if flag['name'] in flag_names: 
+      return err(err_id=34, err_m=f'Flag \'--{flag}\' duplicated')
     flag_names.append(f'--{flag["name"]}')
 
   # Check option repeats
   for option in options:
-    if option['name'] in option_names: raise Exception(f'Option \'--{option}\' duplicated')
+    if option['name'] in option_names: 
+      return err(err_id=33, err_m=f'Option \'--{option}\' duplicated')
     flag_names.append(f'--{option["name"]}')
     
   # VALIDATE FLAGS and OPTIONS
@@ -99,11 +107,13 @@ def parse():
   # The first argument must be a flag or an option
   if len(args) > 0:
     if args[0] not in option_names and args[0] not in flag_names:
-      raise Exception('Unrecognized argument \'{args[0]}\' ')
+      print(args)
+      exit()
+      return err(err_id=75, err_m=f'Unrecognized argument \'{args[0]}\'')
   
     # The last argument must either be a flag or an option argument
     if args[-1] in option_names:
-      raise Exception('Option \'{args[-1]}\' expects input(s)')
+      return err(err_id=16, err_m=f'Option \'{args[-1]}\' expects input(s)')
 
   t: str
   nxt: str
@@ -113,19 +123,24 @@ def parse():
     if t in flag_names and nxt not in flag_names:
       # Flag can go before an option
       if nxt in option_names: continue
-      raise Exception('Unrecognized argument \'{nxt}\' ')
+      print('Number two')
+      return err(err_id=75, err_m=f'Unrecognized argument \'{nxt}\'')
 
     # An option cannot go before a flag or another option
     if t in option_names:
-      if nxt in option_names: 
-        raise Exception('Unexpected option\'{nxt}\'')
-      if  nxt in flag_names: 
-        raise Exception('Unexpected flag \'{nxt}\'')
-      
+      if nxt in option_names:
+        return err(err_id=63, err_m=f'Unexpected option\'{nxt}\'')
+      if  nxt in flag_names:
+        return err(err_id=64, err_m=f'Unexpected flag \'{nxt}\'')
+
   # A non-array option cannot receieve multiple arguments
   items = {}
   print(args)
-  return items
+  return err(
+    err_code='Ok',
+    err_id=100, path='path',
+    match='match', dry_run='dry_run',
+    )
 
 # I think there's a thing or two about writing code in the morning. I mean early enough
 # in the morning when your brain still answers yes to most of your questions before bating.
