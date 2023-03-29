@@ -107,3 +107,14 @@ def check_unknown_command(args: List[str], known_commands: List[str]):
     if not command in known_commands: 
       err(f'Unexpected input: \'{command}\'')
 
+
+def get_args_of(*, option: str, multiple: bool, args: List):
+  # python -m pruning.list . .txt
+  # args will be modified
+  # if multiple, match args until a dash(-) is encountered
+  # if not, option is the next match
+
+  # match
+  # a match is a single word without or within quotes or a sentence in quotes
+
+  

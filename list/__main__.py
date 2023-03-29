@@ -1,3 +1,10 @@
+"""
+list
+list .
+list . .txt
+list -m .txt
+"""
+
 import sys
 
 from pruning.prune_files.prune_files import matcher, prune, walk
