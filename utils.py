@@ -8,6 +8,8 @@ ERRS = {
     3: 'Err_DryRun_CommandDuplicate',
     4: 'Err_Resource_NotFound',
     5: 'Err_UnknownArgFound',
+    6: 'Err_Value_Mismatch',
+    7: 'Err_Data_Mismach',
   }
 
 ERRS.update({
@@ -73,6 +75,15 @@ ERRS.update({
     74: 'Err_Flag_Unrecognized',
     75: 'Err_Argument_Unrecognized',
     76: 'Err_Input_Unrecognized',
+
+    # Invalid
+    80: 'Err_Invalid',
+    81: 'Err_Command_Invalid',
+    82: 'Err_Token_Invalid',
+    83: 'Err_Option_Invalid',
+    84: 'Err_Flag_Invalid',
+    85: 'Err_Argument_Invalid',
+    86: 'Err_Input_Invalid',
 
     # Success
     100: 'Ok',

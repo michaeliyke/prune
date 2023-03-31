@@ -5,6 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "GA",
+      "type": "python",
+      "request": "launch",
+      "module": "pruning.ga",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-g", "-g"
+      ]
+    },
+    {
       "name": "Python: file",
       "type": "python",
       "request": "launch",

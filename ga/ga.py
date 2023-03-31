@@ -8,21 +8,29 @@ from pruning.utils import create_err as err
 tool = 'ga'
 
 FLAGS = {
-  '-e': '--example',
-  '--example': {'name': 'example', 'short': '-e'},
+  '-g': '--global',
+  '-f': '--force',
+  '-m': '--merge', # --merge -m
+  '--merge': {'name': 'merge', 'short': '-m'},
+  '--global': {'name': 'global', 'short': '-g'},
+  '--force': {'name': 'force', 'short': '-f'},
+  '--tags': {'name': 'tags', 'short': ''},
+  '--allow-unrelated-histories': {'name': 'allow-unrelated-histories', 'short': ''},
 }
 
 OPTIONS = {
   '-e': '--example',
+  '-t': '--touch',
+  '--touch': {'name': 'Ttouch'},
   '--example': {'name': 'example', 'short': '-e', 'array': False, 'values': [True, False] }
 }
 
-def get_option(x: str):
+def get_option(x: str, OPTIONS: dict):
   if not x in OPTIONS: return err(err_id=73, err_m=f'Option \'{x}\' is not recognized')
   if x.startswith('--'): return OPTIONS[x]
   if x.startswith('-'): return OPTIONS[OPTIONS[x]]
 
-def get_flag(x: str):
+def get_flag(x: str, FLAGS: dict):
   if not x in FLAGS: return err(err_id=74, err_m=f'Flag \'{x}\' is not recognized')
   if x.startswith('--'): return FLAGS[x]
   if x.startswith('-'): return FLAGS[FLAGS[x]]
@@ -46,75 +54,138 @@ def parse() -> dict:
   sys.argv.insert(0, tool)
   args = deepcopy(sys.argv[1:])
 
+  # FLAGS General Initial Validation
+  key: str
+  for key in FLAGS.keys(): 
+    # Handle omission of the dash(-) in naming an flag
+    if key[0] != '-': return err(err_m='flag names must start with a dash: \'-\'', err_id=84)
+    # Dissallow having a key in both options and flags
+    if key in OPTIONS:
+      return err(err_id=30, err_m=f'Same key \'{key}\' found in OPTIONS and FLAGS')
+    
+    # Handle the short flag form
+    # The long version of a short flag must exist
+    if key.startswith('-') and key.count('-') == 1 and len(key) == 2:
+      if not FLAGS[key] in FLAGS:
+        return err(err_id=84, err_m=f'Invalid flag \'{key}\' detected in settings')
+      # Ensure that both name and short props of the flag dict are present
+      fl = FLAGS[key]
+      if not (isinstance(FLAGS[fl], dict) and 'name' in FLAGS[fl] and 'short' in FLAGS[fl]):
+        return err(err_id=84, err_m=f'Invalid flag \'{key}\' detected in settings')
+      if FLAGS[fl]['name'] == fl[2:] and FLAGS[fl]['short'] != key:
+        return err(err_id=6, err_m=f'Flag \'{key}\' does not match it\'s long form')      
+    # Handle the long flag form
+    # a full flag is 3 characters and above
+    # flag value is dict with name same as the name of the flag without the dashes(--)
+    if key.startswith('--'):
+      if len(key) < 3:
+        return err(err_id=84, err_m=f'Invalid flag \'{key}\' detected in settings')
+      if not (isinstance(FLAGS[key], dict) and FLAGS[key]['name'] == key[2:]):
+        return err(err_id=84, err_m=f'Invalid flag \'{key}\' detected in settings')
+
+  for key in OPTIONS.keys():
+    # Handle omission of the dash(-) in naming an option
+    if key[0] != '-': return err(err_m='option names must start with a dash: \'-\'', err_id=83)
+    # Handle the short option form
+    # The long version of a short option must exist
+    if key.startswith('-') and key.count('-') == 1 and len(key) == 2:
+      if not OPTIONS[key] in OPTIONS:
+        return err(err_id=83, err_m=f'Invalid option \'{key}\' detected in settings')
+      # Ensure that both name and short props of the option dict are present
+      fl = OPTIONS[key]
+      if not isinstance(OPTIONS[fl], dict) and 'name' in FLAGS[fl]:
+        return err(err_id=83, err_m=f'Invalid option \'{key}\' detected in settings')
+      if not OPTIONS[fl]['name'] == fl[2:]:
+        return err(err_id=6, err_m=f'Option \'{key}\' does not match it\'s long form')      
+    # Handle the long option form##############################
+    # a full option is 3 characters and above
+    # option value is dict with name same as the name of the option without the dashes(--)
+    if key.startswith('--'):
+      if len(key) < 3:
+        return err(err_id=83, err_m=f'Invalid option \'{key}\' detected in settings')
+      if not (isinstance(OPTIONS[key], dict) and OPTIONS[key]['name'] == key[2:]):
+        return err(err_id=84, err_m=f'Invalid option \'{key}\' detected in settings')
+      
+
+
   options, flags = [], []
   option_names, flag_names = [], []
+  _OPTIONS = deepcopy(OPTIONS)
+  _FLAGS = deepcopy(FLAGS)
 
   element: str
-  # Harvest options and flags 
+  # Harvest user options and flags 
   for i, element in enumerate(deepcopy(args)):
     if element.startswith('-') or element.startswith('--'):
-      if element in OPTIONS:
-        # expand shortened options and proceed
-        option = get_option(element)
+      if element in _OPTIONS:
+        # obtain a proper reprsentation of the option update the user args with the full/expanded name
+        option = get_option(element, _OPTIONS)
+        # Check option repeats
+        if f'--{option["name"]}' in option_names: 
+          return err(err_id=33, err_m=f'Option \'--{option["name"]}\' duplicated')
+        option_names.append(f'--{option["name"]}')
         args.pop(i)
         args.insert(i, f'--{option["name"]}')
         options.append(option)
         continue
 
-      # The cases of a flas are two:
-      # (a): full flags 
-      # (b) short flags that are assumed to be combined
-      
-      # Tackle full flag
-      if element in FLAGS:
-        # expand shortened options and proceed
-        flag = get_flag(element)
+      # The cases of a flag are two variants names: (a) full flags (b) short flags
+      # Case: full flag
+      if element in _FLAGS:
+        # obtain a proper reprsentation of the flag update the user args with the full/expanded name
+        flag = get_flag(element, _FLAGS)
+        # Check flag repeats
+        if '--'+flag['name'] in flag_names:
+          return err(err_id=34, err_m=f'Flag \'--{flag["name"]}\' duplicated')
+        flag_names.append('--'+flag['name'])
         args.pop(i)
-        args.insert(i, f'--{flag["name"]}')
+        args.insert(i, '--'+flag['name'])
         flags.append(flag)
         continue
 
-      # Tackle short flags, assumed combined
+      # Tackle short flags, a combined set of flags is assumed
       # But first ensure that element is an actual set of recognized flags
-      # Otherwise, unrecognized set flags pass for an argument so skip them
-      cpy = [x for x in element[1:] if f'-{x}' in FLAGS]
-      if len(cpy) != len(element[1:]): continue
+      cpy = [x for x in element[1:] if f'-{x}' in _FLAGS]
+      # Otherwise, unrecognized set flags pass for an argument and so is skipped
+      if len(cpy) != len(element[1:]): continue #
       
       # Expand the flags to individual components
       # Each short flag can only be one character besides the dash(-)
       args.pop(i)
       for ii, token in enumerate(element[1:]):
-        flag = get_flag(f'-{token}')
+        flag = get_flag(f'-{token}', _FLAGS)
+        # Check flag repeats
+        if '--'+flag['name'] in flag_names:
+          return err(err_id=34, err_m=f'Flag \'--{flag["name"]}\' duplicated')
+        flag_names.append('--'+flag['name'])
         args.insert(i+ii, f'--{flag["name"]}')
         flags.append(flag)
   
-  # Check flag repeats
-  for flag in flags:
-    if flag['name'] in flag_names: 
-      return err(err_id=34, err_m=f'Flag \'--{flag}\' duplicated')
-    flag_names.append(f'--{flag["name"]}')
+  
+  # # Check flag repeats
+  # for flag in flags:
+  #   if f'--{flag["name"]}' in flag_names: 
+  #     return err(err_id=34, err_m=f'Flag \'--{flag}\' duplicated')
+  #   flag_names.append(f'--{flag["name"]}')
 
   # Check option repeats
-  for option in options:
-    if option['name'] in option_names: 
-      return err(err_id=33, err_m=f'Option \'--{option}\' duplicated')
-    flag_names.append(f'--{option["name"]}')
+  # for option in options:
+  #   if f'--{option["name"]}' in option_names: 
+  #     return err(err_id=33, err_m=f'Option \'--{option}\' duplicated')
+  #   option_names.append(f'--{option["name"]}')
     
   # VALIDATE FLAGS and OPTIONS
   # ensure a flag goes before a flag, an option or is at the end - 
   # flag cannot go just before an argument
   
   # The first argument must be a flag or an option
+  # The last argument must either be a flag or an option argument
   if len(args) > 0:
-    if args[0] not in option_names and args[0] not in flag_names:
-      print(args)
-      exit()
-      return err(err_id=75, err_m=f'Unrecognized argument \'{args[0]}\'')
-  
-    # The last argument must either be a flag or an option argument
     if args[-1] in option_names:
       return err(err_id=16, err_m=f'Option \'{args[-1]}\' expects input(s)')
-
+    if args[0] not in option_names and args[0] not in flag_names:
+      return err(err_id=75, err_m=f'Unrecognized argument \'{args[0]}\'')
+  
   t: str
   nxt: str
   for t, nxt in pairwise(args):
@@ -133,14 +204,8 @@ def parse() -> dict:
       if  nxt in flag_names:
         return err(err_id=64, err_m=f'Unexpected flag \'{nxt}\'')
 
-  # A non-array option cannot receieve multiple arguments
   items = {}
-  print(args)
-  return err(
-    err_code='Ok',
-    err_id=100, path='path',
-    match='match', dry_run='dry_run',
-    )
+  return err(err_code='Ok', err_id=100)
 
 # I think there's a thing or two about writing code in the morning. I mean early enough
 # in the morning when your brain still answers yes to most of your questions before bating.
@@ -156,3 +221,20 @@ def parse() -> dict:
 # describe the same thing is to say what it is not in a way that connects the dots. 
 # In my experience, you can have it one way or both ways, but never neither way!
 # Think nature does some good here.
+# 
+
+# It is not enough that we build products that function. We also need to build
+# products that bring joy and excittment, pleasure, and fun, and yes, beauty to 
+# people's lives - Don Norman
+# 
+# 
+# If we want users to like our software, we should design it to behave like a likeable
+# person: respectful, generous and helpful. 
+# - Alan Cooper, Software Designer and Programmer
+
+
+# Wireframing is the most important step of any design. It forces you to think 
+# about how things will be organized  and function.
+
+# The time it takes to make a decision increases as the number of alternatives increases
+# - William Edmund Hick
