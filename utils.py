@@ -146,7 +146,10 @@ def err(message: str):
   raise Exception(message)
 
 
-def create_err(*, err_code=None, err_id=None, err_m='', **kwargs):
+def create_err(*, err_code=None, err_id=None, err_m='', extend={}, **kwargs):
+  # Extension can be applied in two ways:
+  # (1) By passing arbtrary kwargs
+  # (2) By using extend=dict arg
   if err_id==None and err_code:
     pos = list(ERRS.values()).index(err_code)
     err_id = list(ERRS.keys())[pos]
@@ -159,6 +162,7 @@ def create_err(*, err_code=None, err_id=None, err_m='', **kwargs):
 
   err = err_ext(err_code=err_code, err_id=err_id, err_m=err_m)
   err.update(kwargs)
+  err.update(extend)
   return err
 
 

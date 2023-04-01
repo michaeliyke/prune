@@ -8,21 +8,38 @@ from pruning.utils import create_err as err
 tool = 'ga'
 
 FLAGS = {
-  '-g': '--global',
-  '-f': '--force',
-  '-m': '--merge', # --merge -m
+  '-m': '--merge',
   '--merge': {'name': 'merge', 'short': '-m'},
-  '--global': {'name': 'global', 'short': '-g'},
+  '-f': '--force',
   '--force': {'name': 'force', 'short': '-f'},
+  '-g': '--global',
+  '--global': {'name': 'global', 'short': '-g'},
   '--tags': {'name': 'tags', 'short': ''},
   '--allow-unrelated-histories': {'name': 'allow-unrelated-histories', 'short': ''},
+  
+  # more
+  '-F': '--fry',
+  '--fry': {'name': 'fry', 'short': '-F'},
+  '-k': '--keep-track',
+  '--keep-track': {'name': 'keep-track', 'short': '-k'},
+
 }
 
 OPTIONS = {
   '-e': '--example',
+  '--example': {'name': 'example', 'short': '-e', 'array': False, 'values': [True, False] },
   '-t': '--touch',
-  '--touch': {'name': 'Ttouch'},
-  '--example': {'name': 'example', 'short': '-e', 'array': False, 'values': [True, False] }
+  '--touch': {'name': 'touch'},
+
+  # more
+  '-D': '--delete-type',
+  '--delete-type': {'name': 'delete-type'},
+  '-d': '--delete',
+  '--delete': {'name': 'delete', 'array': True},
+  '-c': '--cascade',
+  '--cascade': {'name': 'cascade'},
+  '-l': '--log',
+  '--log': {'name': 'log'},
 }
 
 def get_option(x: str, OPTIONS: dict):
@@ -194,7 +211,6 @@ def parse() -> dict:
     if t in flag_names and nxt not in flag_names:
       # Flag can go before an option
       if nxt in option_names: continue
-      print('Number two')
       return err(err_id=75, err_m=f'Unrecognized argument \'{nxt}\'')
 
     # An option cannot go before a flag or another option
@@ -204,8 +220,62 @@ def parse() -> dict:
       if  nxt in flag_names:
         return err(err_id=64, err_m=f'Unexpected flag \'{nxt}\'')
 
-  items = {}
-  return err(err_code='Ok', err_id=100)
+  # items = {
+  #   'options': option_names,
+  #   'flags': flag_names,
+  #   'details': parse_args_details(args=args, _OPTIONS=_OPTIONS, _FLAGS=_FLAGS),
+  # }
+  # return {
+  # **err(err_code='Ok', err_id=100),
+  # **items,
+  # }
+  parsed = parse_args_details(args=args, _OPTIONS=_OPTIONS, _FLAGS=_FLAGS)
+
+  return err(
+    err_code='Ok', 
+    err_id=100, 
+    options=option_names,
+    flags=flag_names,
+    extend=parsed,
+    )
+
+
+
+def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
+  details = {}
+  o = ''
+  _pos = {'opts': {}, 'flgs': {}, 'rgs': {}, 't_wrds': len(args),}
+  _poss = {x: y for x, y in enumerate('-'*len(args))}
+  opt_args = [] # store arguments of each option
+  index = -1
+  while len(args) != 0:
+    index += 1
+    p = args.pop(0)
+
+    # option
+    if p in _OPTIONS: # or it is the end
+      # Register current set of arguments under the given option and empty opt_args
+      if opt_args:
+        details[o] = opt_args
+        opt_args = []
+      # _pos['opts'][index] = p
+      _poss[index] = ['o', p]
+      o = p
+      continue
+    # flags
+    if p in _FLAGS: 
+      # _pos['flgs'][index] = p; 
+      _poss[index] = ['f', p]
+      continue
+    # plain argument
+    opt_args.append(p)
+    # _pos['rgs'][index] = p;
+    _poss[index] = ['a', p]
+    if len(args) == 0:
+      details[o] = opt_args
+  details['_poss'] = _poss
+
+  return details
 
 # I think there's a thing or two about writing code in the morning. I mean early enough
 # in the morning when your brain still answers yes to most of your questions before bating.

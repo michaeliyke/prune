@@ -20,3 +20,15 @@ COMMAND FORMAT
  # FOR TESTING PURPOSES:
  # python -m pruning.prune  -m pruning.copy . .txt C:\ProgramData Temp Tem Test "C:\Program Files"
  # python -m pruning.list  -m pruning.copy __pycache__ . .txt C:\ProgramData Temp Tem Test "C:\Program Files"
+
+ ga --delete user mails phones --fry --force --cascade true --keep-track --log track --delete-type safe
+
+ ga -d user mails phones -fF -c true -k -l track -D safe
+
+-d: user mails phones
+-c: true
+-l: track
+-D safe
+# flags: -fFk
+# options: -d -c -l -D
+internal: {flag_pos: {}, opt_pos: {}, arg_pos: {}, total_words: 10, rebuilt: ''}
