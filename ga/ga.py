@@ -1,3 +1,4 @@
+import itertools
 import sys
 from typing import List
 from copy import deepcopy
@@ -131,7 +132,8 @@ def parse() -> dict:
   _FLAGS = deepcopy(FLAGS)
 
   element: str
-  # Harvest user options and flags 
+  # Harvest user options and flags
+  expansion = 0
   for i, element in enumerate(deepcopy(args)):
     if element.startswith('-') or element.startswith('--'):
       if element in _OPTIONS:
@@ -161,24 +163,26 @@ def parse() -> dict:
         continue
 
       # Tackle short flags, a combined set of flags is assumed
-      # But first ensure that element is an actual set of recognized flags
-      cpy = [x for x in element[1:] if f'-{x}' in _FLAGS]
+      # But first ensure that element's each component's details exit in _FLAGS
       # Otherwise, unrecognized set flags pass for an argument and so is skipped
+      cpy = [_FLAGS['-'+x] for x in element[1:] if f'-{x}' in _FLAGS]
       if len(cpy) != len(element[1:]): continue #
       
       # Expand the flags to individual components
       # Each short flag can only be one character besides the dash(-)
-      args.pop(i)
-      for ii, token in enumerate(element[1:]):
-        flag = get_flag(f'-{token}', _FLAGS)
+      # args.pop(i)###################################insert multiple here
+      x = deepcopy(args)
+      # skip ahead by one element while inserting all of cpy in its place
+      args = args[:i]+cpy+args[i+1:]
+      y = deepcopy(args)
+      for flag in cpy:
         # Check flag repeats
-        if '--'+flag['name'] in flag_names:
-          return err(err_id=34, err_m=f'Flag \'--{flag["name"]}\' duplicated')
-        flag_names.append('--'+flag['name'])
-        args.insert(i+ii, f'--{flag["name"]}')
-        flags.append(flag)
-  
-  
+        if flag in flag_names:
+          return err(err_id=34, err_m=f'Flag \'{flag}\' duplicated')
+        flag_names.append(flag)
+        flags.append(get_flag(flag, _FLAGS))
+
+ 
   # # Check flag repeats
   # for flag in flags:
   #   if f'--{flag["name"]}' in flag_names: 
@@ -240,11 +244,10 @@ def parse() -> dict:
     )
 
 
-
+# TODO: PREVENT Non-List options from receiving more than one argument
 def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
   details = {}
   o = ''
-  _pos = {'opts': {}, 'flgs': {}, 'rgs': {}, 't_wrds': len(args),}
   _poss = {x: y for x, y in enumerate('-'*len(args))}
   opt_args = [] # store arguments of each option
   index = -1
@@ -258,18 +261,15 @@ def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
       if opt_args:
         details[o] = opt_args
         opt_args = []
-      # _pos['opts'][index] = p
       _poss[index] = ['o', p]
       o = p
       continue
     # flags
     if p in _FLAGS: 
-      # _pos['flgs'][index] = p; 
       _poss[index] = ['f', p]
       continue
     # plain argument
     opt_args.append(p)
-    # _pos['rgs'][index] = p;
     _poss[index] = ['a', p]
     if len(args) == 0:
       details[o] = opt_args

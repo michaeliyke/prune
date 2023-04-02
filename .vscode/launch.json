@@ -13,8 +13,8 @@
       "justMyCode": true,
       "cwd": "${workspaceFolder}",
       "args": [
-        "--delete",  "user",  "mails",  "phones",  "--fry",  "--force",  "--cascade",
-        "true",  "--keep-track", "--log",  "track", "--delete-type", "safe",
+        "-d",  "user",  "mails",  "phones",  "-fF",  "-c",
+        "true",  "-k", "-l",  "track", "-D", "safe",
       ]
     },
     {
