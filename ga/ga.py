@@ -43,15 +43,12 @@ OPTIONS = {
   '--log': {'name': 'log'},
 }
 
-def get_option(x: str, OPTIONS: dict):
-  if not x in OPTIONS: return err(err_id=73, err_m=f'Option \'{x}\' is not recognized')
-  if x.startswith('--'): return OPTIONS[x]
-  if x.startswith('-'): return OPTIONS[OPTIONS[x]]
 
-def get_flag(x: str, FLAGS: dict):
-  if not x in FLAGS: return err(err_id=74, err_m=f'Flag \'{x}\' is not recognized')
-  if x.startswith('--'): return FLAGS[x]
-  if x.startswith('-'): return FLAGS[FLAGS[x]]
+def get_assoc(x: str, ASSOC: dict):
+  if not x in ASSOC: 
+    return err(err_id=74, err_m=f'Flag \'{x}\' is not recognized')
+  if x.startswith('--'): return ASSOC[x]
+  if x.startswith('-'): return ASSOC[ASSOC[x]]
 
 def get_args_of(*, option: str, multiple: bool, args: List):
   # python -m pruning.list . .txt
@@ -71,10 +68,17 @@ def parse() -> dict:
   sys.argv.pop(0)
   sys.argv.insert(0, tool)
   args = deepcopy(sys.argv[1:])
+  options, flags = [], []
+  option_names, flag_names = [], []
+  global OPTIONS, FLAGS
+  # global FLAGS
+
+  OPTIONS = deepcopy(OPTIONS)
+  FLAGS = deepcopy(FLAGS)
 
   # FLAGS General Initial Validation
   key: str
-  for key in FLAGS.keys(): 
+  for key in FLAGS.keys():
     # Handle omission of the dash(-) in naming an flag
     if key[0] != '-': return err(err_m='flag names must start with a dash: \'-\'', err_id=84)
     # Dissallow having a key in both options and flags
@@ -123,82 +127,59 @@ def parse() -> dict:
         return err(err_id=83, err_m=f'Invalid option \'{key}\' detected in settings')
       if not (isinstance(OPTIONS[key], dict) and OPTIONS[key]['name'] == key[2:]):
         return err(err_id=84, err_m=f'Invalid option \'{key}\' detected in settings')
-      
-
-
-  options, flags = [], []
-  option_names, flag_names = [], []
-  _OPTIONS = deepcopy(OPTIONS)
-  _FLAGS = deepcopy(FLAGS)
+      # ------------------INITIAL VALIDATION ENDS---------------------------------------
 
   element: str
+  seek = 0
   # Harvest user options and flags
-  expansion = 0
   for i, element in enumerate(deepcopy(args)):
     if element.startswith('-') or element.startswith('--'):
-      if element in _OPTIONS:
-        # obtain a proper reprsentation of the option update the user args with the full/expanded name
-        option = get_option(element, _OPTIONS)
+      if element in OPTIONS:
+        option = element
+        # Handle a short option e.g -d:- get its qualified names, and replace on the list
+        if element.count('-') == 1:
+          option = OPTIONS[option]
+          args.pop(i+seek)
+          args.insert(i+seek, option)
         # Check option repeats
-        if f'--{option["name"]}' in option_names: 
-          return err(err_id=33, err_m=f'Option \'--{option["name"]}\' duplicated')
-        option_names.append(f'--{option["name"]}')
-        args.pop(i)
-        args.insert(i, f'--{option["name"]}')
-        options.append(option)
+        if option in option_names:
+          return err(err_id=33, err_m=f'option \'{option}\' duplicated')
+        option_names.append(option)
+        options.append(get_assoc(option, OPTIONS))
         continue
 
-      # The cases of a flag are two variants names: (a) full flags (b) short flags
-      # Case: full flag
-      if element in _FLAGS:
-        # obtain a proper reprsentation of the flag update the user args with the full/expanded name
-        flag = get_flag(element, _FLAGS)
+      # The cases of a flag are two variants names: (a) Full flags name (b) flag shortcuts
+      # Full flag name
+      if element in FLAGS and element.startswith('--'):
         # Check flag repeats
-        if '--'+flag['name'] in flag_names:
-          return err(err_id=34, err_m=f'Flag \'--{flag["name"]}\' duplicated')
-        flag_names.append('--'+flag['name'])
-        args.pop(i)
-        args.insert(i, '--'+flag['name'])
-        flags.append(flag)
+        if element in flag_names:
+          return err(err_id=34, err_m=f'Flag \'{element}\' duplicated')
+        flag_names.append(element)
+        flags.append(get_assoc(element, FLAGS))
         continue
 
       # Tackle short flags, a combined set of flags is assumed
-      # But first ensure that element's each component's details exit in _FLAGS
+      # But first ensure that element's each component's details exit in FLAGS
       # Otherwise, unrecognized set flags pass for an argument and so is skipped
-      cpy = [_FLAGS['-'+x] for x in element[1:] if f'-{x}' in _FLAGS]
+      cpy = [FLAGS['-'+x] for x in element[1:] if f'-{x}' in FLAGS]
       if len(cpy) != len(element[1:]): continue #
       
       # Expand the flags to individual components
       # Each short flag can only be one character besides the dash(-)
-      # args.pop(i)###################################insert multiple here
-      x = deepcopy(args)
       # skip ahead by one element while inserting all of cpy in its place
-      args = args[:i]+cpy+args[i+1:]
-      y = deepcopy(args)
+      args = args[:i+seek]+cpy+args[i+seek+1:]
       for flag in cpy:
         # Check flag repeats
         if flag in flag_names:
           return err(err_id=34, err_m=f'Flag \'{flag}\' duplicated')
         flag_names.append(flag)
-        flags.append(get_flag(flag, _FLAGS))
-
- 
-  # # Check flag repeats
-  # for flag in flags:
-  #   if f'--{flag["name"]}' in flag_names: 
-  #     return err(err_id=34, err_m=f'Flag \'--{flag}\' duplicated')
-  #   flag_names.append(f'--{flag["name"]}')
-
-  # Check option repeats
-  # for option in options:
-  #   if f'--{option["name"]}' in option_names: 
-  #     return err(err_id=33, err_m=f'Option \'--{option}\' duplicated')
-  #   option_names.append(f'--{option["name"]}')
+        flags.append(get_assoc(flag, FLAGS))
+        
+      seek += len(cpy)-1
     
   # VALIDATE FLAGS and OPTIONS
   # ensure a flag goes before a flag, an option or is at the end - 
   # flag cannot go just before an argument
-  
   # The first argument must be a flag or an option
   # The last argument must either be a flag or an option argument
   if len(args) > 0:
@@ -224,16 +205,7 @@ def parse() -> dict:
       if  nxt in flag_names:
         return err(err_id=64, err_m=f'Unexpected flag \'{nxt}\'')
 
-  # items = {
-  #   'options': option_names,
-  #   'flags': flag_names,
-  #   'details': parse_args_details(args=args, _OPTIONS=_OPTIONS, _FLAGS=_FLAGS),
-  # }
-  # return {
-  # **err(err_code='Ok', err_id=100),
-  # **items,
-  # }
-  parsed = parse_args_details(args=args, _OPTIONS=_OPTIONS, _FLAGS=_FLAGS)
+  parsed = parse_args_details(args=args, OPTIONS=OPTIONS, FLAGS=FLAGS)
 
   return err(
     err_code='Ok', 
@@ -245,7 +217,7 @@ def parse() -> dict:
 
 
 # TODO: PREVENT Non-List options from receiving more than one argument
-def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
+def parse_args_details(*, args: List[str], OPTIONS: dict, FLAGS: dict):
   details = {}
   o = ''
   _poss = {x: y for x, y in enumerate('-'*len(args))}
@@ -256,7 +228,7 @@ def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
     p = args.pop(0)
 
     # option
-    if p in _OPTIONS: # or it is the end
+    if p in OPTIONS: # or it is the end
       # Register current set of arguments under the given option and empty opt_args
       if opt_args:
         details[o] = opt_args
@@ -265,7 +237,7 @@ def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
       o = p
       continue
     # flags
-    if p in _FLAGS: 
+    if p in FLAGS: 
       _poss[index] = ['f', p]
       continue
     # plain argument
@@ -278,7 +250,7 @@ def parse_args_details(*, args: List[str], _OPTIONS: dict, _FLAGS: dict):
   return details
 
 # I think there's a thing or two about writing code in the morning. I mean early enough
-# in the morning when your brain still answers yes to most of your questions before bating.
+# in the morning when your brain still answers yes to most of your questions the cranks
 # Jokes apart, but it seems to me that the morning energy is kinda different generally,
 # nomatter which area. @cosmas, @broiyke, and @ebenezer what do you think. 
 # Did you notice that
