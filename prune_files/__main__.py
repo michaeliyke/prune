@@ -1,6 +1,6 @@
 import sys
-
-from pruning.prune_files.prune_files import matcher, prune, walk
+# python -m pruning.dir C:\Users\Iyke\BASES\COURSES\cloud node_modules -d
+from pruning.dir.pruner import matcher, prune, walk
 from pruning.utils import check_args
 
 ok, args_tuple, err_message = check_args(sys.argv)

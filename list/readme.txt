@@ -7,6 +7,15 @@ COMMAND FORMAT
  python -m pruning.move . .txt OR python -m pruning.move . .txt ["C:\Program Files" C:\ProgramData Temp Tem Test]
  python -m pruning.list . .txt OR python -m pruning.move . .txt ["C:\Program Files" C:\ProgramData Temp Tem Test]
  python -m pruning.copy . .txt OR python -m pruning.copy . .txt ["C:\Program Files" C:\ProgramData Temp Tem Test]
+
+---------------------------------
+array=.x .y .z|.x,.y,.z
+
+list: list|list --all|-a - default
+list-type: list --type|-t array
+list-except: list --except|-e array
+list-not-type: same as above
+list-dirs: list --dirs|-d
  
 # Prune folders -  coming soon
 
@@ -31,4 +40,7 @@ COMMAND FORMAT
 -D safe
 # flags: -fFk
 # options: -d -c -l -D
-internal: {flag_pos: {}, opt_pos: {}, arg_pos: {}, total_words: 10, rebuilt: ''}
+_pos: {flgs: {}, opts: {}, rgs: {}, t_wrds: 10}
+
+postional: ['a', '25', 'xy'] # Three postional arguments
+[instruction]positions - 3 - Unnecessary - recognize all inputs as positional arg until a flag or an option 

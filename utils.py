@@ -85,6 +85,15 @@ ERRS.update({
     85: 'Err_Argument_Invalid',
     86: 'Err_Input_Invalid',
 
+    # Invalid
+    90: 'Err_ValidationFailed',
+    91: 'Err_Command_ValidationFailed',
+    92: 'Err_Token_ValidationFailed',
+    93: 'Err_Option_ValidationFailed',
+    94: 'Err_Flag_ValidationFailed',
+    95: 'Err_Argument_ValidationFailed',
+    96: 'Err_Input_ValidationFailed',
+
     # Success
     100: 'Ok',
     101: 'Success',

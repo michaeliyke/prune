@@ -5,6 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Prune dir",
+      "type": "python",
+      "request": "launch",
+      "module": "pruning.dir",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "C:\\Users\\Iyke\\BASES\\COURSES\\cloud", "node_modules", "-d"
+      ]
+    },
+    {
       "name": "GA",
       "type": "python",
       "request": "launch",

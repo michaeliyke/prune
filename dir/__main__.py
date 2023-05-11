@@ -1,27 +1,9 @@
-"""
-list
-list .
-list . .txt
-list -m .txt
-"""
-
 import sys
+# python -m pruning.dir C:\Users\Iyke\BASES\COURSES\cloud node_modules -d
+from pruning.dir.pruner import matcher, prune, walk
+from pruning.utils import check_args, create_err as err
 
-from pruning.prune_files.prune_files import matcher, prune, walk
-from pruning.utils import check_args, check_args_ext
-
-from ga_cli.ga import parse
-
-# ch = check_args_ext(sys.argv) # old way of parsing arguments
-# err_message = ch['err_m'] # old way of parsing arguments
-
-p = parse()
-print(p)
-exit(0)
-ok, args_tuple, err_message, err_code = check_args(sys.argv)
-if err_message == 'ERR_NO_*':
-  raise
-
+ok, args_tuple, err_message = check_args(sys.argv)
 path, m, dry_run = args_tuple
 
 if not ok:

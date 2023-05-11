@@ -36,7 +36,7 @@ OPTIONS = {
   '-D': '--delete-type',
   '--delete-type': {'name': 'delete-type'},
   '-d': '--delete',
-  '--delete': {'name': 'delete', 'array': True},
+  '--delete': {'name': 'delete', 'array': False},
   '-c': '--cascade',
   '--cascade': {'name': 'cascade'},
   '-l': '--log',
@@ -231,6 +231,8 @@ def parse_args_details(*, args: List[str], OPTIONS: dict, FLAGS: dict):
     if p in OPTIONS: # or it is the end
       # Register current set of arguments under the given option and empty opt_args
       if opt_args:
+        if OPTIONS[o]['array'] is False and len(opt_args) > 1:
+          return err(err_id=85, err_m=f'Non-array option {o} recieved multiple values')
         details[o] = opt_args
         opt_args = []
       _poss[index] = ['o', p]
@@ -280,3 +282,42 @@ def parse_args_details(*, args: List[str], OPTIONS: dict, FLAGS: dict):
 
 # The time it takes to make a decision increases as the number of alternatives increases
 # - William Edmund Hick
+
+
+# Content precedes design. Design in the absence of content is not design, it's decoration
+# __ Jeffrey Zeldman
+
+# You'll never know everything about anything, especially something you love.
+# __ Julia Child
+
+# Anyone who stops learning is old, whether at twenty or eight. Anyone who keeps learning stays
+# young 
+# __ Henry Ford
+
+# A component is a minimal software item that can be tested in isolation
+
+# wrting clean code is what you must do in order to call yourself a professional.
+# There is no reasonable excuse for doing anything less than your best.
+# - Robert Martin, author of Clean Code
+
+# Failure is an event. Not a person.
+# __ Zig Ziglar
+
+# Screens are small, connections are slow, and people often only give you their partial
+# attention or short bursts of their time. Designing for mobile first forces you to
+# embrace these contraints.
+# __ Luke Wroblewski, Mobile First
+
+# Learning is an active process. We learn by doing. Only knowledge that is used 
+# sticks in your mind
+# __ Dale Carnegie
+
+# Design is a plan for arranging elements in such a way as best to accomplish a 
+# particular purpose.
+# __ Charlse Eames 
+
+# Error Prevention
+# "Even better than good error messages is a careful design that prevents a problem
+# from occuring in the first place. Either eliminate error prone conditions
+# or check for them and present users with a confirmation option before
+# they commit to the action"
