@@ -22,7 +22,7 @@ walk(dir=path, pruner=prune, matcher=matcher(contains=m), dry=dry_run)
 
 
 # default is --contains
-# --ends|--endswith|-e, --starts|--startswith|-s, 
+# --ends|--endswith|-e, --starts|--startswith|-s,
 # --contains|--find|--search|--index|-c|-f|-S|-i
 # /?|--help|-h
 # No commands - refer them to run help command
@@ -43,7 +43,7 @@ walk(dir=path, job=job)
 def walk(*, dir:str, job:Callable, stop_on_err=True):
 
   """walk is an interface for traversing a directory tree performing arbitrary prune job on all items.
-  Pruning job receives only the path of a directory item from walk and performs actions. 
+  Pruning job receives only the path of a directory item from walk and performs actions.
   It informs walk if it has encountered an error or not by returning a status object.
   Walk will continue is status is None or its err_m property is non-empty.
   Then walk implements a stop on error crank which instructs it to continue regardless of errors.
@@ -75,7 +75,7 @@ def walk(*, dir:str, job:Callable, stop_on_err=True):
 
 
 # default is --contains
-# --ends|--endswith|-e, --starts|--startswith|-s, 
+# --ends|--endswith|-e, --starts|--startswith|-s,
 # --contains|--find|--search|--index|-c|-f|-S|-i
 # /?|--help|-h
 # No commands - refer them to run help command

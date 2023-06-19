@@ -1,4 +1,4 @@
-list 
+list
 move
 copy
 delete - pruner
@@ -7,7 +7,7 @@ pruner helps to remove unnecessary fs objects. This is it's core objective - to 
 and their nested dirs and remove unnecessary files or folder or both. It basically is a helper tool to help clean up a
 folder tree from the commad line. By default, pruner moves affected objects to system trash which can still be restored.
 
-Additionally, it can list, move or copy fs objects to desired location(s). 
+Additionally, it can list, move or copy fs objects to desired location(s).
 The performance will be considered in a later version.
 
 COMMAND FORMS
@@ -37,3 +37,13 @@ p.list -l 1|-l 2|-l 3|-l x # all objects within current tree with depth limited 
 p.list source -o,-p,-c,-e,-s x y z -M # list x y z from source down to maximum depth
 NOTE: default depth is -l 1, --level x is specified as -l x or --level x
 source is the first positional argument and is single
+COMMAND FORMAT
+
+# Prune files
+ python -m pruning.prune_files . ._
+ python -m pruning.prune_files . .txt
+ python -m pruning.prune_files . __pycache__
+
+ # Prune folders - coming soon
+
+ # Prune arbitrary - coming soon
