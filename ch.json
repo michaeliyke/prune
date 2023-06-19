@@ -1,0 +1,26 @@
+{
+	"err_m": "",
+	"err_code": "Ok",
+	"err_id": 100,
+	"options": ["--delete", "--cascade", "--log", "--delete-type"],
+	"flags": ["--force", "--fry", "--keep-track"],
+	"--delete": ["user", "mails", "phones"],
+	"--cascade": ["true"],
+	"--log": ["track"],
+	"--delete-type": ["safe"],
+	"_poss": {
+		"0": ["o", "--delete"],
+		"1": ["a", "user"],
+		"2": ["a", "mails"],
+		"3": ["a", "phones"],
+		"4": ["f", "--force"],
+		"5": ["f", "--fry"],
+		"6": ["o", "--cascade"],
+		"7": ["a", "true"],
+		"8": ["f", "--keep-track"],
+		"9": ["o", "--log"],
+		"10": ["a", "track"],
+		"11": ["o", "--delete-type"],
+		"12": ["a", "safe"]
+	}
+}
